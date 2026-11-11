@@ -4,6 +4,8 @@ import AiSuggestPanel from '../components/artwork/AiSuggestPanel'
 import AttributesEditor from '../components/artwork/AttributesEditor'
 import ImageDropzone from '../components/artwork/ImageDropzone'
 import IpfsPanel from '../components/artwork/IpfsPanel'
+import MintedInfo from '../components/nft/MintedInfo'
+import MintPanel from '../components/nft/MintPanel'
 import StatusBadge from '../components/artwork/StatusBadge'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
@@ -313,11 +315,12 @@ function ArtworkForm({ artwork: initialArtwork }) {
       </form>
 
       {isEdit && (
-        <div className="mt-6 lg:w-1/2">
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <IpfsPanel
             artwork={artwork}
             onUpdated={(updated) => {
-              setArtwork(updated)
+              // Keep an already-loaded NFT (the IPFS endpoint returns it unpopulated).
+              setArtwork((prev) => ({ ...updated, nft: prev?.nft ?? updated.nft }))
               setForm(toForm(updated))
             }}
             blockedReason={
@@ -328,6 +331,17 @@ function ArtworkForm({ artwork: initialArtwork }) {
                   : ''
             }
           />
+
+          {artwork.status === 'UPLOADED_TO_IPFS' && (
+            <MintPanel
+              artwork={artwork}
+              onMinted={(nft, generation) => setArtwork({ ...generation, nft })}
+            />
+          )}
+
+          {artwork.status === 'MINTED' && artwork.nft && typeof artwork.nft === 'object' && (
+            <MintedInfo nft={artwork.nft} onUpdated={(nft) => setArtwork((prev) => ({ ...prev, nft }))} />
+          )}
         </div>
       )}
 

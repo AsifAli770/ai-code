@@ -218,6 +218,36 @@ describe('PATCH /api/users/me', () => {
   });
 });
 
+describe('GET /api/users/me/dashboard', () => {
+  it('requires authentication', async () => {
+    assert.equal((await request(app).get('/api/users/me/dashboard')).status, 401);
+  });
+
+  it('returns zeroed stats and progress for a new user', async () => {
+    const token = await registerAndGetToken();
+    const res = await request(app).get('/api/users/me/dashboard').set('Authorization', `Bearer ${token}`);
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.data.stats, {
+      artworks: 0,
+      drafts: 0,
+      onIpfs: 0,
+      nftsCreated: 0,
+      nftsOwned: 0,
+      listed: 0,
+      sold: 0,
+      purchases: 0,
+    });
+    assert.deepEqual(res.body.data.progress, {
+      walletVerified: false,
+      createdArtwork: false,
+      uploadedToIpfs: false,
+      mintedNft: false,
+    });
+    assert.deepEqual(res.body.data.recentArtwork, []);
+    assert.deepEqual(res.body.data.recentActivity, []);
+  });
+});
+
 describe('requireRole middleware', () => {
   const run = (user) =>
     new Promise((resolve) => requireRole('ADMIN')({ user }, {}, (err) => resolve(err)));

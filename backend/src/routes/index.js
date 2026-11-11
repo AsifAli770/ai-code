@@ -4,7 +4,8 @@ import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import walletRoutes from './wallet.routes.js';
 import aiRoutes from './ai.routes.js';
-import { NETWORKS } from '../config/networks.js';
+import { NETWORKS, publicNetwork } from '../config/networks.js';
+import nftRoutes from './nft.routes.js';
 
 const router = Router();
 
@@ -21,18 +22,11 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/ai', aiRoutes);
+router.use('/nfts', nftRoutes);
 
 // Public list of supported networks (no RPC URLs that may contain API keys).
 router.get('/networks', (_req, res) => {
-  const data = Object.values(NETWORKS).map(({ key, name, chainId, explorerUrl, nftContract, marketplaceContract }) => ({
-    key,
-    name,
-    chainId,
-    explorerUrl,
-    nftContract,
-    marketplaceContract,
-  }));
-  res.json({ success: true, message: 'OK', data });
+  res.json({ success: true, message: 'OK', data: Object.values(NETWORKS).map(publicNetwork) });
 });
 
 export default router;

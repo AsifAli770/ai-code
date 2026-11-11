@@ -30,7 +30,10 @@ export const list = asyncHandler(async (req, res) => {
 
 export const getOne = asyncHandler(async (req, res) => {
   const generation = await generationService.getForUser(req.user.id, req.params.id);
-  sendSuccess(res, { data: { generation: generation.toJSON() } });
+  const json = generation.toJSON();
+  // Serialise the populated NFT with its own toJSON (adds id and gateway URLs).
+  if (generation.populated('nft') && generation.nft) json.nft = generation.nft.toJSON();
+  sendSuccess(res, { data: { generation: json } });
 });
 
 export const update = asyncHandler(async (req, res) => {

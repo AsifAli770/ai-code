@@ -29,6 +29,18 @@ export function isUserRejection(error) {
 
 /** Converts a wallet error into a short message a user can act on. */
 export function parseWalletError(error) {
+  // Transaction-specific problems (ethers v6 error codes / node messages).
+  const text = `${error?.shortMessage ?? ''} ${error?.message ?? ''}`.toLowerCase()
+  if (error?.code === 'INSUFFICIENT_FUNDS' || text.includes('insufficient funds')) {
+    return 'Not enough ETH in this wallet to pay the network fee.'
+  }
+  if (text.includes('nonce too high') || text.includes('nonce has already been used')) {
+    return 'MetaMask is out of sync with the chain (common after restarting the local Hardhat node). In MetaMask Settings, search for "Clear activity" (usually under Developer tools or Advanced), clear it for this account, then try again.'
+  }
+  if (error?.code === 'CALL_EXCEPTION') {
+    return error.reason ? `The transaction was rejected by the contract: ${error.reason}` : 'The transaction failed on-chain (reverted).'
+  }
+
   switch (getWalletErrorCode(error)) {
     case WALLET_ERROR.USER_REJECTED:
       return 'Request cancelled in your wallet.'

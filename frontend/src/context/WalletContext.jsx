@@ -216,7 +216,7 @@ export function WalletProvider({ children }) {
                 chainName: network.name,
                 nativeCurrency: network.nativeCurrency,
                 rpcUrls: network.rpcUrls,
-                blockExplorerUrls: [network.explorerUrl],
+                ...(network.explorerUrl ? { blockExplorerUrls: [network.explorerUrl] } : {}),
               },
             ],
           })

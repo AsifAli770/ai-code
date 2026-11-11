@@ -4,6 +4,7 @@ import DashboardPage from '../pages/DashboardPage'
 import LandingPage from '../pages/LandingPage'
 import LoginPage from '../pages/LoginPage'
 import MyArtworkPage from '../pages/MyArtworkPage'
+import MyNftsPage from '../pages/MyNftsPage'
 import StudioPage from '../pages/StudioPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import ProfilePage from '../pages/ProfilePage'
@@ -29,6 +30,7 @@ export default function AppRoutes() {
           <Route path="studio" element={<StudioPage />} />
           <Route path="studio/:id" element={<StudioPage />} />
           <Route path="artwork" element={<MyArtworkPage />} />
+          <Route path="nfts" element={<MyNftsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

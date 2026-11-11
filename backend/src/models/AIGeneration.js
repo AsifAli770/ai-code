@@ -67,6 +67,29 @@ const ipfsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/**
+ * Mint progress. The tx hash is saved as soon as the user's wallet sends it,
+ * so a closed browser tab can't lose track of a mint; "Check status" resumes.
+ */
+export const MINT_PROGRESS = Object.freeze({
+  NONE: 'NONE',
+  PENDING: 'PENDING', // sent, waiting for confirmation / verification
+  CONFIRMED: 'CONFIRMED',
+  FAILED: 'FAILED', // reverted or failed verification; the user may mint again
+});
+
+const mintSchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: Object.values(MINT_PROGRESS), default: MINT_PROGRESS.NONE },
+    chainId: { type: Number, default: null },
+    txHash: { type: String, lowercase: true, default: null },
+    error: { type: String, default: null },
+    submittedAt: { type: Date, default: null },
+    confirmedAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const ipfsUri = (cid) => (cid ? `ipfs://${cid}` : null);
 const gatewayUrl = (cid) => (cid ? `${env.ipfs.gatewayUrl}/${cid}` : null);
 
@@ -99,6 +122,8 @@ const aiGenerationSchema = new mongoose.Schema(
     status: { type: String, enum: Object.values(GENERATION_STATUS), default: GENERATION_STATUS.DRAFT },
 
     ipfs: { type: ipfsSchema, default: () => ({}) },
+    mint: { type: mintSchema, default: () => ({}) },
+    nft: { type: mongoose.Schema.Types.ObjectId, ref: 'NFT', default: null },
   },
   { timestamps: true }
 );

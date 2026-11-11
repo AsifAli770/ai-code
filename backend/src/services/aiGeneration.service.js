@@ -93,7 +93,9 @@ export async function listForUser(userId, { page, limit }) {
 }
 
 export async function getForUser(userId, id) {
-  return findOwned(userId, id);
+  const doc = await findOwned(userId, id);
+  if (doc.nft) await doc.populate('nft'); // minted: include token id, chain, tx
+  return doc;
 }
 
 export async function updateForUser(userId, id, details) {

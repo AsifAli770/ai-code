@@ -88,7 +88,7 @@ export default function WalletButton({ fullWidth = false }) {
             </div>
             <div className="flex items-center">
               <CopyButton value={account} label="Copy address" />
-              {network && (
+              {network?.explorerUrl && (
                 <a
                   href={`${network.explorerUrl}/address/${account}`}
                   target="_blank"

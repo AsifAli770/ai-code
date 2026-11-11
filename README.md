@@ -7,7 +7,7 @@ NFTs and trade them on **Ethereum Sepolia** and **Base Sepolia**. Testnets only,
 |--------------|-------------------------------------------------------------|----------|
 | `backend/`   | Node 22, Express 5, MongoDB Atlas (Mongoose), JWT, bcrypt, ethers v6, multer | Phase 3 |
 | `frontend/`  | React 19, Vite, Tailwind CSS v4, React Router, Axios, ethers v6              | Phase 3 |
-| `contracts/` | Hardhat 3, Solidity, OpenZeppelin                           | Phase 5  |
+| `contracts/` | Hardhat 3, Solidity 0.8.34, OpenZeppelin 5.6, ethers v6 (see `contracts/README.md`) | Phase 5 |
 | `docs/`      | Postman collections                                         |          |
 
 ## Prerequisites
@@ -178,7 +178,43 @@ read + write) → copy the **JWT** into `backend/.env` as `PINATA_JWT=...`. Opti
 image previews. Pinned files stay on Pinata even if you delete the draft. Pinning keeps content
 available only while it stays pinned, and the free plan's storage and file limits apply.
 
-## 6. API
+## 6. Minting (Phase 6)
+
+On an artwork that is **On IPFS**, the **Mint NFT** panel calls `NFTCollection.mint(tokenURI)` from the
+user's own MetaMask wallet (the backend holds no keys and sends no transactions). Then:
+
+1. The tx hash is sent to the backend right away and saved on the artwork. If the tab closes, **Check
+   status** finishes the job later.
+2. After the transaction is mined, the backend verifies it **on-chain** before recording anything:
+   supported network, receipt succeeded, enough confirmations (1 local, 2 testnets), sent to **our** NFT
+   contract, `NFTMinted` emitted by that contract, minter == the user's **signature-verified** wallet,
+   and token URI == the artwork's `ipfs://<metadataCID>`. The current owner is read from `ownerOf()`.
+3. Only then are the NFT (chainId, contract, tokenId, owner, tx hash, block) and a `MINT` transaction
+   saved, and the artwork marked **Minted**. Unique indexes make duplicates impossible, and reporting
+   the same transaction again is idempotent.
+
+**My NFTs** lists NFTs owned by your verified wallet. **Verify ownership on-chain** re-reads `ownerOf()`.
+
+### Local chain setup (development)
+1. `cd contracts && npm run node`: keep this terminal open. It prints 20 **public test accounts**.
+2. In another terminal: `npm run deploy:local`. Put the two addresses into `backend/.env`:
+   `HARDHAT_NFT_CONTRACT=…` and `HARDHAT_MARKETPLACE_CONTRACT=…` (on a fresh node they are always
+   `0x5FbDB2315678afecb367f032d93F642f64180aa3` and `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`).
+   Restart the backend.
+3. MetaMask → Add network manually: name `Hardhat Local`, RPC `http://127.0.0.1:8545`, chain ID
+   `31337`, currency `ETH`. Or just pick "Hardhat Local" in the app's network menu.
+4. MetaMask → Add account → **Import account** → paste the private key of Hardhat **Account #1** (from
+   the `npm run node` output). Name it "HARDHAT TEST – DO NOT USE". These keys are public: never send
+   real funds to them or use them on a real network.
+5. In the app, verify that account (Dashboard → Verify & link wallet), then mint.
+
+Restarting `npm run node` wipes the local chain. Redeploy with **`npm run deploy:local:reset`**: plain
+`deploy:local` may skip deploying because Ignition remembers the previous chain's deployment. On a fresh
+node the addresses are the same, so `.env` stays valid. Then reset MetaMask's cached nonce: in
+Settings, search for **"Clear activity"** (under Developer tools in newer versions, Advanced in older
+ones).
+
+## 7. API
 
 All responses: `{ success, message, data }`, or on error `{ success: false, message, errors? }`.
 
@@ -205,6 +241,10 @@ All responses: `{ success, message, data }`, or on error `{ success: false, mess
 | DELETE | `/api/ai/generations/:id` | Bearer | –                        |
 | GET    | `/api/ai/ipfs/status`     | Bearer | –                        |
 | POST   | `/api/ai/generations/:id/ipfs` | Bearer | – (start or retry; idempotent) |
+| POST   | `/api/nfts/mint`     | Bearer | `{ generationId, chainId, txHash }`: 202 pending / 201 verified |
+| GET    | `/api/nfts/mine?page&limit&chainId` | Bearer | – |
+| GET    | `/api/nfts/:id`      | Bearer | – |
+| POST   | `/api/nfts/:id/verify-owner` | Bearer | – (re-reads `ownerOf()` on-chain) |
 
 Postman: import `docs/postman/api.postman_collection.json`. Register/Login store the token
 automatically. Postman can't sign messages, so test the full wallet flow in the app or via `npm test`.

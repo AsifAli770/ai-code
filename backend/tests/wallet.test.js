@@ -61,14 +61,14 @@ beforeEach(async () => {
 });
 
 describe('GET /api/networks', () => {
-  it('lists Sepolia and Base Sepolia', async () => {
+  it('lists Sepolia and Base Sepolia (plus the local chain outside production)', async () => {
     const res = await request(app).get('/api/networks');
     assert.equal(res.status, 200);
-    assert.deepEqual(
-      res.body.data.map((n) => n.chainId),
-      [SEPOLIA, BASE_SEPOLIA]
-    );
-    assert.equal(res.body.data[0].rpcUrl, undefined, 'RPC URLs must not be exposed');
+    const ids = res.body.data.map((n) => n.chainId);
+    assert.ok(ids.includes(SEPOLIA));
+    assert.ok(ids.includes(BASE_SEPOLIA));
+    assert.ok(ids.every((id) => [SEPOLIA, BASE_SEPOLIA, 31337].includes(id)));
+    assert.ok(res.body.data.every((n) => n.rpcUrl === undefined), 'RPC URLs must not be exposed');
   });
 });
 
