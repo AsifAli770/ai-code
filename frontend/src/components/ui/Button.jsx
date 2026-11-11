@@ -3,10 +3,10 @@ import Spinner from './Spinner'
 
 const VARIANTS = {
   primary:
-    'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-600/25 hover:from-brand-500 hover:to-brand-400',
+    'bg-gradient-to-r from-brand-600 to-brand-500 text-on-accent shadow-lg shadow-brand-600/25 hover:from-brand-500 hover:to-brand-400',
   secondary: 'border border-white/15 bg-white/5 text-white hover:bg-white/10',
   ghost: 'text-slate-300 hover:bg-white/5 hover:text-white',
-  danger: 'bg-red-500/90 text-white hover:bg-red-500',
+  danger: 'bg-red-500/90 text-on-accent hover:bg-red-500',
 }
 
 const SIZES = {

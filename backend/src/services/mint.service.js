@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { getNetworkByChainId } from '../config/networks.js';
 import { AIGeneration, GENERATION_STATUS, IPFS_STATUS, MINT_PROGRESS } from '../models/AIGeneration.js';
+import { Listing, LISTING_STATUS } from '../models/Listing.js';
 import { NFT } from '../models/NFT.js';
 import { Transaction, TRANSACTION_TYPES } from '../models/Transaction.js';
 import { User } from '../models/User.js';
@@ -210,20 +211,27 @@ export async function recordMint(userId, { generationId, chainId, txHash }) {
   return { state: 'CONFIRMED', generation, nft };
 }
 
-/** NFTs currently owned by the user's linked wallet (cached owner, refreshed via verifyOwner). */
+/**
+ * NFTs the user's linked wallet owns, plus the ones it has listed for sale
+ * (those sit in marketplace escrow, but still belong to the seller until sold).
+ */
 export async function listMyNfts(userId, { page, limit, chainId }) {
   const user = await User.findById(userId);
   if (!user?.walletAddress) {
     return { items: [], pagination: { page, limit, total: 0, totalPages: 1 }, walletLinked: false };
   }
-  const filter = { ownerAddress: user.walletAddress };
+  const listedIds = await Listing.find({ sellerWallet: user.walletAddress, listingStatus: LISTING_STATUS.ACTIVE }).distinct(
+    'nft'
+  );
+  const filter = { $or: [{ ownerAddress: user.walletAddress }, { _id: { $in: listedIds } }] };
   if (chainId) filter.chainId = chainId;
   const [items, total] = await Promise.all([
     NFT.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('generation', 'generatedImage'),
+      .populate('generation', 'generatedImage')
+      .populate('activeListing', 'price listingStatus listingId'),
     NFT.countDocuments(filter),
   ]);
   return {
@@ -233,6 +241,7 @@ export async function listMyNfts(userId, { page, limit, chainId }) {
       // as a fallback for when IPFS gateways are slow.
       json.generation = n.generation?._id?.toString() ?? null;
       json.localImage = n.generation?.generatedImage ?? null;
+      json.activeListing = n.activeListing ? n.activeListing.toJSON() : null;
       return json;
     }),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },

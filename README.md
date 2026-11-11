@@ -214,7 +214,57 @@ node the addresses are the same, so `.env` stays valid. Then reset MetaMask's ca
 Settings, search for **"Clear activity"** (under Developer tools in newer versions, Advanced in older
 ones).
 
-## 7. API
+## 7. Marketplace (Phase 8, tested on the local Hardhat chain)
+
+| Action | Who | On-chain | Backend records it only after verifying |
+|---|---|---|---|
+| **List for sale** | Owner | one-time `approve(marketplace, tokenId)` + `listItem(nft, tokenId, price)`: NFT moves into **escrow** | `ItemListed` from our marketplace, seller == caller's verified wallet, correct NFT, owner read via `ownerOf` |
+| **Buy** | Anyone but the seller | `buyItem(listingId)` with exactly the price | `ItemSold` for **this** listing, buyer == caller's verified wallet |
+| **Cancel** | Seller only | `cancelListing(listingId)`: NFT returns to the seller | `ListingCancelled` for this listing by the seller |
+| **Transfer** | Owner | `safeTransferFrom(owner, to, tokenId)` | ERC-721 `Transfer` of this token from the caller's verified wallet |
+| **Withdraw earnings** | Seller | `withdrawProceeds()` (pull payments) | nothing to record: the contract balance is the truth |
+
+Protection against double purchases and unauthorized actions:
+- **On-chain:** escrow, exact payment, `ListingNotActive`, `NotSeller`, `CannotBuyOwnListing`, reentrancy
+  guard (Phase 5 tests).
+- **In the app:** before paying, the buyer's browser re-reads `getListing()`; a sold or cancelled listing
+  can't be bought.
+- **In the backend:** status-conditional updates and unique indexes (one sale per listing, one active
+  listing per NFT, one record per tx/event), and the acting wallet must be the caller's verified wallet.
+- **Sync:** opening a listing or NFT page re-reads `getListing()`/`ownerOf()`. A sale or cancellation
+  that was never reported is detected and the database corrected.
+
+Pages: **Explore** (public; search, network filter, sort), **NFT page** `/nft/:id` (public; buy, list,
+cancel, transfer, activity), **Activity** (your history), and earnings on the **Dashboard**.
+
+### Testing the full flow locally
+1. `npm run node` (contracts) is running, contracts deployed (`npm run deploy:local:reset` after any restart),
+   `HARDHAT_MARKETPLACE_CONTRACT` set in `backend/.env`.
+2. Import **two** Hardhat test accounts into MetaMask (e.g. Account #1 = seller, Account #2 = buyer) and
+   link each to its own app user (`test1@…`, `test2@…`).
+3. Seller: open an NFT → **List for sale** → approve + list. Buyer (other user, other account): Explore →
+   NFT → **Buy now**. Seller: Dashboard → **Withdraw earnings**.
+
+## 8. Admin (Phase 9)
+
+Log in as an admin (create one with `npm run seed:admin` in `backend/`) → **Admin** in the navbar.
+
+- **Dashboard** (`/admin`): registered users (+ new this week), NFTs, collections (distinct
+  collection names), active and total listings, completed sales, sales volume, and recent platform
+  activity, all from real data.
+- **Users** (`/admin/users`): search by name/email/wallet, filter by role/status, per-user stats
+  (minted / owned / sold). Action, with a confirmation: **Deactivate / Reactivate**.
+
+Rules (enforced on the server, not just hidden in the UI):
+- Every `/api/admin/*` route requires `authenticate` + `requireRole('ADMIN')`. Non-admins get 403,
+  anonymous users 401. The role is read from the database on every request.
+- **Roles can't be changed through the API or UI.** Admins are created only on the server with
+  `npm run seed:admin` (or `npm run make-admin -- <email>`).
+- Deactivated users are blocked on their very next request and can't log in.
+- An admin can't deactivate their own account, and the last active admin can't be deactivated.
+- Only `isActive` can be changed; role, email, password and wallet can't.
+
+## 9. API
 
 All responses: `{ success, message, data }`, or on error `{ success: false, message, errors? }`.
 
@@ -245,6 +295,19 @@ All responses: `{ success, message, data }`, or on error `{ success: false, mess
 | GET    | `/api/nfts/mine?page&limit&chainId` | Bearer | – |
 | GET    | `/api/nfts/:id`      | Bearer | – |
 | POST   | `/api/nfts/:id/verify-owner` | Bearer | – (re-reads `ownerOf()` on-chain) |
+| GET    | `/api/nfts/:id`      | –      | public NFT details (+ active listing, synced with chain) |
+| GET    | `/api/nfts/:id/activity` | –  | public activity |
+| POST   | `/api/nfts/:id/transfer` | Bearer | `{ txHash }` |
+| GET    | `/api/marketplace/listings?page&limit&chainId&search&sort` | – | active listings |
+| GET    | `/api/marketplace/listings/:id` | – | one listing (synced with chain) |
+| POST   | `/api/marketplace/listings` | Bearer | `{ nftId, txHash }` |
+| POST   | `/api/marketplace/listings/:id/buy` | Bearer | `{ txHash }` |
+| POST   | `/api/marketplace/listings/:id/cancel` | Bearer | `{ txHash }` |
+| GET    | `/api/users/me/transactions?page&limit&type` | Bearer | your history |
+| GET    | `/api/admin/stats`   | Admin  | platform numbers |
+| GET    | `/api/admin/activity?page&limit&type` | Admin | recent platform activity |
+| GET    | `/api/admin/users?page&limit&search&role&status` | Admin | user list + stats |
+| PATCH  | `/api/admin/users/:id` | Admin | `{ isActive }` (deactivate / reactivate only) |
 
 Postman: import `docs/postman/api.postman_collection.json`. Register/Login store the token
 automatically. Postman can't sign messages, so test the full wallet flow in the app or via `npm test`.

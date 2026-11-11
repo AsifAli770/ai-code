@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { getNetworkByChainId } from '../../config/networks'
+import { formatEther } from 'ethers'
 import { assetUrl } from '../../utils/assets'
+import { formatEth } from '../../utils/format'
 import IpfsImage from './IpfsImage'
 
 /**
@@ -24,6 +26,11 @@ export default function NftCard({ nft }) {
         <span className={`h-1.5 w-1.5 rounded-full ${network?.dotClass ?? 'bg-slate-400'}`} aria-hidden="true" />
         {network?.name ?? `Chain ${nft.chainId}`}
       </span>
+      {nft.activeListing?.listingStatus === 'ACTIVE' && (
+        <span className="absolute right-3 top-3 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-on-accent shadow-lg shadow-black/40 ring-1 ring-white/20">
+          For sale · {formatEth(formatEther(nft.activeListing.price))} ETH
+        </span>
+      )}
     </div>
   )
 
@@ -39,17 +46,10 @@ export default function NftCard({ nft }) {
 
   return (
     <article className="card group flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-white/20">
-      {nft.generation ? (
-        <Link to={`/studio/${nft.generation}`} className="block">
-          {media}
-          {title}
-        </Link>
-      ) : (
-        <>
-          {media}
-          {title}
-        </>
-      )}
+      <Link to={`/nft/${nft.id}`} className="block">
+        {media}
+        {title}
+      </Link>
 
       <div className="mt-auto flex items-center gap-3 px-4 pb-4 pt-3 text-xs">
         {nft.imageGatewayUrl && (

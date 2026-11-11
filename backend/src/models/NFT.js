@@ -41,6 +41,10 @@ const nftSchema = new mongoose.Schema(
     transactionHash: { type: String, required: true, lowercase: true },
     blockNumber: { type: Number, required: true },
     mintStatus: { type: String, enum: Object.values(MINT_STATUS), default: MINT_STATUS.CONFIRMED },
+
+    // Set while listed for sale (the NFT is then held in escrow by the marketplace,
+    // so ownerAddress is the marketplace contract until it sells or is cancelled).
+    activeListing: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', default: null },
   },
   { timestamps: true }
 );

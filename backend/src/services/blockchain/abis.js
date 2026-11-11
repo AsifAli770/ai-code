@@ -1,8 +1,8 @@
 import { Interface } from 'ethers';
 
 /**
- * Human-readable ABI fragments for the parts of NFTCollection the backend uses.
- * Must match contracts/contracts/NFTCollection.sol.
+ * Human-readable ABI fragments for the parts of the contracts the backend uses.
+ * Must match contracts/contracts/NFTCollection.sol and NFTMarketplace.sol.
  */
 export const NFT_COLLECTION_ABI = [
   'event NFTMinted(uint256 indexed tokenId, address indexed creator, string tokenURI)',
@@ -12,4 +12,14 @@ export const NFT_COLLECTION_ABI = [
   'function mint(string uri) returns (uint256)',
 ];
 
+export const NFT_MARKETPLACE_ABI = [
+  'event ItemListed(uint256 indexed listingId, address indexed seller, address indexed nft, uint256 tokenId, uint256 price)',
+  'event ItemSold(uint256 indexed listingId, address indexed buyer, address indexed seller, address nft, uint256 tokenId, uint256 price)',
+  'event ListingCancelled(uint256 indexed listingId, address indexed seller, address indexed nft, uint256 tokenId)',
+  'event ProceedsWithdrawn(address indexed seller, uint256 amount)',
+  'function getListing(uint256 listingId) view returns (tuple(address seller, address nft, uint256 tokenId, uint256 price, bool active))',
+  'function proceeds(address seller) view returns (uint256)',
+];
+
 export const nftCollectionInterface = new Interface(NFT_COLLECTION_ABI);
+export const nftMarketplaceInterface = new Interface(NFT_MARKETPLACE_ABI);

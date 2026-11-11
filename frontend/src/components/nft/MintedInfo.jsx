@@ -106,9 +106,14 @@ export default function MintedInfo({ nft, onUpdated }) {
         {message.text}
       </Alert>
 
-      <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={verify} loading={checking}>
-        Verify ownership on-chain
-      </Button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button size="sm" to={`/nft/${nft.id}`}>
+          Open NFT page (sell / transfer)
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={verify} loading={checking}>
+          Verify ownership on-chain
+        </Button>
+      </div>
     </section>
   )
 }

@@ -1,7 +1,7 @@
 import { Contract, JsonRpcProvider } from 'ethers';
 import { getNetworkByChainId } from '../../config/networks.js';
 import { ApiError } from '../../utils/ApiError.js';
-import { NFT_COLLECTION_ABI } from './abis.js';
+import { NFT_COLLECTION_ABI, NFT_MARKETPLACE_ABI } from './abis.js';
 
 /**
  * READ-ONLY access to the blockchains. The backend never holds a private key
@@ -67,5 +67,19 @@ export const chainReader = {
     const contract = new Contract(contractAddress, NFT_COLLECTION_ABI, provider);
     const owner = await withTimeout(contract.ownerOf(tokenId), network);
     return owner.toLowerCase();
+  },
+
+  /** A marketplace listing as stored on-chain. */
+  async getListing(chainId, marketplaceAddress, listingId) {
+    const { provider, network } = getProvider(chainId);
+    const contract = new Contract(marketplaceAddress, NFT_MARKETPLACE_ABI, provider);
+    const l = await withTimeout(contract.getListing(listingId), network);
+    return {
+      seller: l.seller.toLowerCase(),
+      nft: l.nft.toLowerCase(),
+      tokenId: l.tokenId.toString(),
+      price: l.price.toString(),
+      active: l.active,
+    };
   },
 };

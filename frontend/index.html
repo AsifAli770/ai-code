@@ -12,6 +12,18 @@
       rel="stylesheet"
     />
     <title>Mintverse — AI NFT Marketplace</title>
+    <script>
+      // Apply the saved theme before the page paints (prevents a light/dark flash).
+      // Must match ThemeContext: stored preference is 'light' | 'dark' | 'system' (default 'light').
+      ;(function () {
+        var pref = 'light'
+        try {
+          pref = localStorage.getItem('mintverse.theme') || 'light'
+        } catch (e) {}
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

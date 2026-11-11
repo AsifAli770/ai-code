@@ -19,8 +19,8 @@ export default function ArtworkCard({ artwork }) {
         <div className="absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
           <StatusBadge status={artwork.status} overlay />
           {artwork.ipfs?.status === 'FAILED' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-xs font-semibold text-white shadow-lg shadow-black/40 ring-1 ring-white/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-white" aria-hidden="true" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-xs font-semibold text-on-accent shadow-lg shadow-black/40 ring-1 ring-white/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-on-accent" aria-hidden="true" />
               IPFS: retry needed
             </span>
           )}

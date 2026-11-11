@@ -5,7 +5,7 @@ import { timeAgo } from '../../utils/time'
 const TYPE = {
   MINT: { label: 'Minted', icon: 'M12 3v18M3 12h18' },
   LIST: { label: 'Listed', icon: 'M4 7h16M4 12h10M4 17h7' },
-  BUY: { label: 'Bought', icon: 'M5 12l5 5L20 7' },
+  BUY: { label: 'Sold', icon: 'M5 12l5 5L20 7' },
   TRANSFER: { label: 'Transferred', icon: 'M7 7h10l-3-3m3 13H7l3 3' },
   CANCEL: { label: 'Cancelled listing', icon: 'M6 6l12 12M18 6 6 18' },
 }
@@ -46,8 +46,8 @@ export default function RecentActivity({ items, loading }) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-white">
                     {type.label}{' '}
-                    {item.nft?.generation ? (
-                      <Link to={`/studio/${item.nft.generation}`} className="font-medium hover:text-brand-300">
+                    {item.nft?.id ? (
+                      <Link to={`/nft/${item.nft.id}`} className="font-medium hover:text-brand-300">
                         {title}
                       </Link>
                     ) : (

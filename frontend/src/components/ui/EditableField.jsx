@@ -138,7 +138,7 @@ export default function EditableField({
               type="button"
               onClick={save}
               disabled={saving}
-              className={`${iconButton} bg-brand-500 text-white hover:bg-brand-400`}
+              className={`${iconButton} bg-brand-500 text-on-accent hover:bg-brand-400`}
               aria-label={`Save ${label}`}
               title="Save (Enter)"
             >

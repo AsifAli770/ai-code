@@ -39,16 +39,21 @@ export default function LandingPage() {
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           {isAuthenticated ? (
-            <Button size="lg" to="/dashboard">
-              Go to dashboard
-            </Button>
+            <>
+              <Button size="lg" to="/dashboard">
+                Go to dashboard
+              </Button>
+              <Button size="lg" variant="secondary" to="/explore">
+                Explore NFTs
+              </Button>
+            </>
           ) : (
             <>
               <Button size="lg" to="/register">
                 Create free account
               </Button>
-              <Button size="lg" variant="secondary" to="/login">
-                Log in
+              <Button size="lg" variant="secondary" to="/explore">
+                Explore NFTs
               </Button>
             </>
           )}

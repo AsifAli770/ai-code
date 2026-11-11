@@ -25,7 +25,8 @@ export default function ProfilePage() {
       setNotice(`${label} updated.`)
     } catch (err) {
       const { message, fieldErrors } = parseApiError(err)
-      throw new Error(fieldErrors[field] || message)
+      // Re-thrown with a readable message for the field; the original error is kept as `cause`.
+      throw new Error(fieldErrors[field] || message, { cause: err })
     }
   }
 
