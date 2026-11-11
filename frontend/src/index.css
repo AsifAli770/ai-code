@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink-950: #07070c;
+  --color-ink-900: #0d0d16;
+  --color-ink-800: #15151f;
+  --color-ink-700: #1f1f2c;
+  --color-ink-600: #2c2c3d;
+
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink-950 font-sans text-slate-200 antialiased;
+    min-height: 100svh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-white;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-400;
+  }
+}
+
+@utility text-gradient {
+  @apply bg-gradient-to-r from-brand-300 via-brand-400 to-accent-400 bg-clip-text text-transparent;
+}
+
+@utility card {
+  @apply rounded-2xl border border-white/10 bg-ink-900/70 backdrop-blur;
+}
