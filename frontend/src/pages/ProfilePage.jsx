@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Alert from '../components/ui/Alert'
+import ChangePasswordForm from '../components/ChangePasswordForm'
 import Avatar from '../components/ui/Avatar'
 import Button from '../components/ui/Button'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import CopyButton from '../components/ui/CopyButton'
 import EditableField from '../components/ui/EditableField'
 import { useAuth } from '../hooks/useAuth'
@@ -13,8 +16,25 @@ const formatDate = (iso) =>
   new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuth()
+  const { user, setUser, logoutAll } = useAuth()
+  const navigate = useNavigate()
   const [notice, setNotice] = useState('')
+  const [confirmLogoutAll, setConfirmLogoutAll] = useState(false)
+  const [loggingOutAll, setLoggingOutAll] = useState(false)
+  const [sessionError, setSessionError] = useState('')
+
+  const handleLogoutAll = async () => {
+    setSessionError('')
+    setLoggingOutAll(true)
+    try {
+      await logoutAll()
+      navigate('/login')
+    } catch (err) {
+      setSessionError(parseApiError(err).message)
+      setLoggingOutAll(false)
+      setConfirmLogoutAll(false)
+    }
+  }
 
   /** Saves one field; errors are thrown so the field can show them inline. */
   const saveField = (field, label) => async (value) => {
@@ -119,6 +139,46 @@ export default function ProfilePage() {
           </p>
         )}
       </section>
+
+      {/* --- Password (users and admins) */}
+      <section className="card mt-6 p-6">
+        <h2 className="text-lg font-semibold">Change password</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Enter your current password to set a new one. Your other devices will be logged out; this one stays
+          signed in.
+        </p>
+        <ChangePasswordForm />
+      </section>
+
+      {/* --- Sessions */}
+      <section className="card mt-6 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Sessions</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Lost a device or used a shared computer? Sign out everywhere, including this browser.
+            </p>
+          </div>
+          <Button variant="danger" size="sm" onClick={() => setConfirmLogoutAll(true)}>
+            Log out of all devices
+          </Button>
+        </div>
+        <Alert className="mt-4">{sessionError}</Alert>
+      </section>
+
+      <ConfirmDialog
+        open={confirmLogoutAll}
+        title="Log out of all devices?"
+        confirmLabel="Log out everywhere"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={loggingOutAll}
+        onCancel={() => setConfirmLogoutAll(false)}
+        onConfirm={handleLogoutAll}
+      >
+        Every browser and device signed in to this account will be logged out, including this one. Your wallet and
+        NFTs are not affected.
+      </ConfirmDialog>
     </div>
   )
 }

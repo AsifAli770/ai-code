@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { THEME_KEY, THEME_OPTIONS, ThemeContext } from './theme-context'
 
+// Anything else stored (including the old "system" option) falls back to light.
 const readPreference = () => {
   try {
     const saved = localStorage.getItem(THEME_KEY)
@@ -10,26 +11,13 @@ const readPreference = () => {
   }
 }
 
-const systemPrefersDark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-
 /**
- * Light / Dark / System theme. The preference is stored per browser; "system"
- * follows the OS setting live. The chosen theme is written to
+ * Light / Dark theme. The preference is stored per browser and written to
  * <html data-theme="light|dark">, which index.css uses to switch colors.
  * (index.html applies the same logic before React loads, to avoid a flash.)
  */
 export function ThemeProvider({ children }) {
   const [preference, setPreferenceState] = useState(readPreference)
-  const [systemDark, setSystemDark] = useState(systemPrefersDark)
-
-  // Follow OS changes while "system" is selected.
-  useEffect(() => {
-    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
-    if (!mq) return
-    const onChange = (e) => setSystemDark(e.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
 
   // Keep tabs in sync when the preference changes elsewhere.
   useEffect(() => {
@@ -40,11 +28,9 @@ export function ThemeProvider({ children }) {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  const resolved = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
-
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', resolved)
-  }, [resolved])
+    document.documentElement.setAttribute('data-theme', preference)
+  }, [preference])
 
   const setPreference = useCallback((value) => {
     if (!THEME_OPTIONS.includes(value)) return
@@ -56,6 +42,6 @@ export function ThemeProvider({ children }) {
     }
   }, [])
 
-  const value = useMemo(() => ({ preference, theme: resolved, setPreference }), [preference, resolved, setPreference])
+  const value = useMemo(() => ({ preference, theme: preference, setPreference }), [preference, setPreference])
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

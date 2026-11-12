@@ -2,9 +2,11 @@ import mongoose from 'mongoose';
 import { AIGeneration, GENERATION_STATUS } from '../models/AIGeneration.js';
 import { Listing, LISTING_STATUS } from '../models/Listing.js';
 import { NFT } from '../models/NFT.js';
+import { REVOKE_REASONS } from '../models/RefreshSession.js';
 import { Transaction, TRANSACTION_TYPES } from '../models/Transaction.js';
 import { ROLES, User } from '../models/User.js';
 import { ApiError } from '../utils/ApiError.js';
+import { revokeAllUserSessions } from './session.service.js';
 
 /**
  * Admin-only reads and user management. Routes using this service are
@@ -160,6 +162,8 @@ export async function setUserActive(adminId, userId, isActive) {
 
   user.isActive = isActive;
   await user.save();
+  // Deactivation also ends every login session (refresh tokens stop working).
+  if (deactivating) await revokeAllUserSessions(user._id, REVOKE_REASONS.INACTIVE);
 
   const counts = await countsFor([user]);
   return { ...user.toJSON(), stats: counts(user) };

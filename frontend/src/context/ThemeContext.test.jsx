@@ -35,10 +35,15 @@ describe('ThemeProvider + ThemeToggle', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
   })
 
-  it('"system" follows the OS setting (light when it can’t be detected)', () => {
+  it('offers only Light and Dark', () => {
     renderToggle()
-    fireEvent.click(screen.getByRole('radio', { name: /system/i }))
-    expect(localStorage.getItem('mintverse.theme')).toBe('system')
+    expect(screen.getAllByRole('radio')).toHaveLength(2)
+    expect(screen.queryByRole('radio', { name: /system/i })).toBeNull()
+  })
+
+  it('falls back to light for an old saved "system" preference', () => {
+    localStorage.setItem('mintverse.theme', 'system')
+    renderToggle()
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
   })
 

@@ -40,6 +40,9 @@ export function errorHandler(err, _req, res, _next) {
 
   const body = { success: false, message: error.message };
   if (error.details) body.errors = error.details;
+  // Machine-readable reason the client can act on (e.g. LOGIN_BLOCKED).
+  if (typeof error.code === 'string') body.code = error.code;
+  if (Number.isInteger(error.retryAfterSeconds)) res.set('Retry-After', String(error.retryAfterSeconds));
   if (!env.isProduction && error.statusCode === 500 && err?.stack) body.stack = err.stack;
 
   res.status(error.statusCode).json(body);

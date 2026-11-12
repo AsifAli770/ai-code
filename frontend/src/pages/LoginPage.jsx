@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
+import ResendVerificationButton from '../components/ResendVerificationButton'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Set when the password was right but the email isn't verified yet.
+  const [unverifiedEmail, setUnverifiedEmail] = useState('')
 
   const onChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -22,14 +25,18 @@ export default function LoginPage() {
   const onSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setUnverifiedEmail('')
     setSubmitting(true)
     try {
       // On success, GuestRoute redirects to the originally requested page.
       await login(form)
     } catch (err) {
-      const { message, fieldErrors: fe } = parseApiError(err)
+      // After 5 failed attempts the backend answers 429 (code LOGIN_BLOCKED) with a
+      // "currently blocked, try again in N minutes" message, shown as-is.
+      const { message, fieldErrors: fe, code } = parseApiError(err)
       setError(message)
       setFieldErrors(fe)
+      if (code === 'EMAIL_NOT_VERIFIED') setUnverifiedEmail(form.email.trim())
       setSubmitting(false)
     }
   }
@@ -49,6 +56,7 @@ export default function LoginPage() {
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Alert>{error}</Alert>
+        {unverifiedEmail && <ResendVerificationButton email={unverifiedEmail} />}
         <FormField
           label="Email"
           name="email"
@@ -71,6 +79,11 @@ export default function LoginPage() {
           error={fieldErrors.password}
           required
         />
+        <div className="flex justify-end">
+          <Link to="/forgot-password" className="text-sm font-medium text-brand-300 hover:text-brand-200">
+            Forgot password?
+          </Link>
+        </div>
         <Button type="submit" className="w-full" loading={submitting}>
           Log in
         </Button>

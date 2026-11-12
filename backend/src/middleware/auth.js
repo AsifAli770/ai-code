@@ -1,4 +1,5 @@
 import { User } from '../models/User.js';
+import { isAccessSessionActive, SESSION_EXPIRED_MESSAGE } from '../services/session.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { verifyAccessToken } from '../utils/jwt.js';
 
@@ -7,6 +8,8 @@ import { verifyAccessToken } from '../utils/jwt.js';
  * Re-loads the user from the database on every request so that
  * deactivated or deleted accounts lose access immediately and
  * the role always comes from the database, not from the token.
+ * The token's session must also still be active, so logout (this device
+ * or all devices) takes effect at once instead of when the token expires.
  */
 export async function authenticate(req, _res, next) {
   try {
@@ -21,16 +24,17 @@ export async function authenticate(req, _res, next) {
     try {
       payload = verifyAccessToken(token);
     } catch (err) {
-      throw ApiError.unauthorized(
-        err.name === 'TokenExpiredError' ? 'Session expired, please log in again' : 'Invalid token'
-      );
+      throw ApiError.unauthorized(err.name === 'TokenExpiredError' ? SESSION_EXPIRED_MESSAGE : 'Invalid token');
     }
 
     const user = await User.findById(payload.sub);
     if (!user) throw ApiError.unauthorized('Invalid token');
     if (!user.isActive) throw ApiError.forbidden('This account has been deactivated');
+    // Tokens issued before sessions existed have no `sid` and are rejected too.
+    if (!(await isAccessSessionActive(payload.sid, user))) throw ApiError.unauthorized(SESSION_EXPIRED_MESSAGE);
 
     req.user = user;
+    req.sessionId = payload.sid; // this device's session (e.g. kept when changing the password)
     next();
   } catch (err) {
     next(err);
@@ -47,7 +51,7 @@ export async function optionalAuthenticate(req, _res, next) {
   try {
     const payload = verifyAccessToken(token);
     const user = await User.findById(payload.sub);
-    if (user?.isActive) req.user = user;
+    if (user?.isActive && (await isAccessSessionActive(payload.sid, user))) req.user = user;
   } catch {
     /* invalid or expired token: treat as anonymous */
   }

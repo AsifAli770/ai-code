@@ -10,6 +10,12 @@ export class ApiError extends Error {
     this.details = details;
   }
 
+  /** Adds a machine-readable code (string) to the error response. */
+  withCode(code) {
+    this.code = code;
+    return this;
+  }
+
   static badRequest(message = 'Bad request', details) {
     return new ApiError(400, message, details);
   }

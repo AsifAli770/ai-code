@@ -3,6 +3,9 @@ import MainLayout from '../layouts/MainLayout'
 import ActivityPage from '../pages/ActivityPage'
 import DashboardPage from '../pages/DashboardPage'
 import ExplorePage from '../pages/ExplorePage'
+import ForgotPasswordPage from '../pages/ForgotPasswordPage'
+import ResetPasswordPage from '../pages/ResetPasswordPage'
+import VerifyEmailPage from '../pages/VerifyEmailPage'
 import NftDetailsPage from '../pages/NftDetailsPage'
 import LandingPage from '../pages/LandingPage'
 import LoginPage from '../pages/LoginPage'
@@ -31,7 +34,12 @@ export default function AppRoutes() {
         <Route element={<GuestRoute />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
         </Route>
+
+        {/* Opened from email links: work whether or not someone is logged in. */}
+        <Route path="verify-email" element={<VerifyEmailPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="dashboard" element={<DashboardPage />} />

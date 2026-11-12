@@ -4,8 +4,10 @@ import AuthCard from '../components/AuthCard'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import ResendVerificationButton from '../components/ResendVerificationButton'
 import { useAuth } from '../hooks/useAuth'
 import { parseApiError } from '../services/api'
+import { PASSWORD_HINT, passwordError } from '../utils/passwordRules'
 
 // Mirrors the backend rules so users get instant feedback.
 // The backend still validates everything independently.
@@ -13,11 +15,36 @@ function validate({ name, email, password, confirmPassword }) {
   const errors = {}
   if (name.trim().length < 2 || name.trim().length > 60) errors.name = 'Name must be 2–60 characters'
   if (!/^\S+@\S+\.\S+$/.test(email.trim())) errors.email = 'Enter a valid email address'
-  if (password.length < 8 || password.length > 72) errors.password = 'Password must be 8–72 characters'
-  else if (!/[A-Za-z]/.test(password) || !/\d/.test(password))
-    errors.password = 'Password must contain a letter and a number'
+  const pwError = passwordError(password)
+  if (pwError) errors.password = pwError
   if (confirmPassword !== password) errors.confirmPassword = 'Passwords do not match'
   return errors
+}
+
+/** Shown after sign-up when the account must be confirmed by email first. */
+function CheckYourEmail({ email }) {
+  return (
+    <AuthCard
+      title="Check your email"
+      subtitle="One more step before you can log in."
+      footer={
+        <>
+          Already verified?{' '}
+          <Link to="/login" className="font-medium text-brand-300 hover:text-brand-200">
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-slate-300">
+          We sent a verification link to <span className="font-semibold text-white">{email}</span>. Open it to
+          activate your account. Can't find it? Check your spam folder.
+        </p>
+        <ResendVerificationButton email={email} />
+      </div>
+    </AuthCard>
+  )
 }
 
 export default function RegisterPage() {
@@ -26,6 +53,7 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [pendingEmail, setPendingEmail] = useState('')
 
   const onChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -41,7 +69,10 @@ export default function RegisterPage() {
 
     setSubmitting(true)
     try {
-      await register({ name: form.name.trim(), email: form.email.trim(), password: form.password })
+      const email = form.email.trim()
+      const result = await register({ name: form.name.trim(), email, password: form.password })
+      // Logged in straight away: GuestRoute redirects. Otherwise the email must be verified first.
+      if (result?.verificationRequired) setPendingEmail(email)
     } catch (err) {
       const { message, fieldErrors: fe } = parseApiError(err)
       setError(message)
@@ -49,6 +80,8 @@ export default function RegisterPage() {
       setSubmitting(false)
     }
   }
+
+  if (pendingEmail) return <CheckYourEmail email={pendingEmail} />
 
   return (
     <AuthCard
@@ -92,7 +125,7 @@ export default function RegisterPage() {
           type="password"
           autoComplete="new-password"
           placeholder="At least 8 characters"
-          hint="8–72 characters, including a letter and a number."
+          hint={PASSWORD_HINT}
           value={form.password}
           onChange={onChange}
           error={fieldErrors.password}

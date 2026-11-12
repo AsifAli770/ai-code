@@ -49,13 +49,18 @@ async function seedAdmin() {
 
   if (!existing) {
     const hash = await bcrypt.hash(password, env.bcryptSaltRounds);
-    await User.create({ name, email, password: hash, role: ROLES.ADMIN, isActive: true });
+    // Created from the server's own config, so the email is trusted (no verification link needed).
+    await User.create({ name, email, password: hash, role: ROLES.ADMIN, isActive: true, emailVerified: true, emailVerifiedAt: new Date() });
     console.log(`✔ Admin created: ${email}`);
     return;
   }
 
-  const updates = { role: ROLES.ADMIN, isActive: true };
-  if (resetPassword) updates.password = await bcrypt.hash(password, env.bcryptSaltRounds);
+  const updates = { role: ROLES.ADMIN, isActive: true, emailVerified: true };
+  if (resetPassword) {
+    updates.password = await bcrypt.hash(password, env.bcryptSaltRounds);
+    // New password: end every existing login session.
+    updates.sessionsRevokedAt = new Date();
+  }
   await User.updateOne({ _id: existing._id }, updates);
 
   console.log(

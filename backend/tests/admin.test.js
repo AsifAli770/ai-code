@@ -158,9 +158,13 @@ describe('user management', () => {
     const login = await request(app).post('/api/auth/login').send({ email: 'alice@example.com', password: 'secret123' });
     assert.equal(login.status, 403);
 
-    // Reactivate
+    // Reactivate. Deactivation ended Alice's old sessions, so her old token stays
+    // dead; she has to log in again, which now works.
     await request(app).patch(`/api/admin/users/${alice.id}`).set(auth(admin.token)).send({ isActive: true });
-    assert.equal((await request(app).get('/api/auth/me').set(auth(alice.token))).status, 200);
+    assert.equal((await request(app).get('/api/auth/me').set(auth(alice.token))).status, 401);
+    const relogin = await request(app).post('/api/auth/login').send({ email: 'alice@example.com', password: 'secret123' });
+    assert.equal(relogin.status, 200);
+    assert.equal((await request(app).get('/api/auth/me').set(auth(relogin.body.data.token))).status, 200);
   });
 
   it('roles cannot be changed through the API (role in the body is ignored)', async () => {

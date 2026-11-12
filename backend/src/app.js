@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { ALLOWED_ORIGINS } from './config/cors.js';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { apiLimiter } from './middleware/rateLimiters.js';
@@ -16,16 +17,11 @@ export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  app.set('trust proxy', env.trustProxy);
 
   app.use(helmet());
-  app.use(cors({
-    origin: [
-      "http://localhost:5173",
-      "http://192.168.0.141:5173"
-    ],
-    credentials: true
-  }));
+  // credentials: true lets the browser send the HttpOnly refresh-token cookie.
+  app.use(cors({ origin: [...ALLOWED_ORIGINS], credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   if (!env.isTest) app.use(morgan(env.isProduction ? 'combined' : 'dev'));
 

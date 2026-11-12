@@ -52,6 +52,23 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Email verification. Deliberately NO default: accounts created before
+    // verification existed have no value and are treated as verified, so they
+    // are not locked out. New accounts are created with `false`.
+    emailVerified: {
+      type: Boolean,
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    // (Failed logins are counted per IP in LoginThrottle, not on the user.)
+    // Set by "log out of all devices" and by deactivation. Any session started
+    // before this moment is rejected, even if a revoke write raced with a refresh.
+    sessionsRevokedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -73,6 +90,10 @@ userSchema.set('toJSON', {
     delete ret._id;
     delete ret.__v;
     delete ret.password;
+    // Leftovers of the earlier per-account lockout, in case old documents still have them.
+    delete ret.failedLoginAttempts;
+    delete ret.lockUntil;
+    delete ret.sessionsRevokedAt;
     return ret;
   },
 });

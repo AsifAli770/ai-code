@@ -3,8 +3,12 @@ import { env } from '../config/env.js';
 
 const ALGORITHM = 'HS256';
 
-export function signAccessToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role }, env.jwt.secret, {
+/**
+ * Short-lived access token. `sid` is the refresh-session family it belongs to,
+ * so logging out (one device or all) also kills access tokens immediately.
+ */
+export function signAccessToken(user, sessionId) {
+  return jwt.sign({ sub: user.id, role: user.role, sid: sessionId }, env.jwt.secret, {
     algorithm: ALGORITHM,
     expiresIn: env.jwt.expiresIn,
   });
